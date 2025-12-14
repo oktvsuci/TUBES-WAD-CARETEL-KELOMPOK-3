@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
-        });
+        $table->enum('role', ['admin', 'mahasiswa', 'teknisi'])->default('mahasiswa');
+        $table->string('phone')->nullable();
+        $table->string('photo')->nullable();
+        $table->boolean('is_active')->default(true);
+    });
+
     }
 
     /**

@@ -12,9 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('penugasan', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        $table->id();
+        $table->foreignId('laporan_id')->constrained('laporan')->cascadeOnDelete();
+        $table->foreignId('teknisi_id')->constrained('users');
+        $table->date('deadline')->nullable();
+        $table->enum('status', ['assigned', 'diproses', 'selesai'])->default('assigned');
+        $table->timestamps();
+    });
+
     }
 
     /**

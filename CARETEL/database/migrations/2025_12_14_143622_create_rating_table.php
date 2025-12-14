@@ -12,9 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('rating', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        $table->id();
+        $table->foreignId('laporan_id')->constrained('laporan')->cascadeOnDelete();
+        $table->foreignId('mahasiswa_id')->constrained('users');
+        $table->foreignId('teknisi_id')->constrained('users');
+        $table->tinyInteger('nilai');
+        $table->text('komentar')->nullable();
+        $table->timestamps();
+    });
+
     }
 
     /**

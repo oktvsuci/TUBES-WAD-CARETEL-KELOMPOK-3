@@ -12,9 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('status_log', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        $table->id();
+        $table->foreignId('laporan_id')->constrained('laporan')->cascadeOnDelete();
+        $table->foreignId('user_id')->constrained('users');
+        $table->string('status');
+        $table->text('catatan')->nullable();
+        $table->timestamps();
+    });
+
     }
 
     /**
