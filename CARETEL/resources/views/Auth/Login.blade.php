@@ -1,133 +1,189 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - CARETEL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .caretel-red { color: #E30613; }
-        .bg-caretel-red { background-color: #E30613; }
-        .hover\:bg-caretel-red-dark:hover { background-color: #C00510; }
-    </style>
-</head>
-<body class="h-screen overflow-hidden">
-    <div class="flex h-full">
+@extends('layouts.app')
+
+@section('title', 'Sign In')
+
+@section('body')
+<div class="container-fluid vh-100">
+    <div class="row h-100">
         <!-- Left Side - Login Form -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
-            <div class="w-full max-w-md">
+        <div class="col-md-5 d-flex align-items-center justify-content-center bg-white">
+            <div class="w-100 px-5" style="max-width: 480px;">
                 <!-- Logo -->
-                <div class="flex items-center mb-12">
-                    <div class="bg-caretel-red w-12 h-12 rounded flex items-center justify-center">
-                        <i class="fas fa-building text-white text-xl"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h1 class="text-2xl font-bold text-gray-900">CARETEL</h1>
-                        <p class="text-sm text-gray-500">Telkom University</p>
+                <div class="mb-5">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="bg-caretel-red rounded d-flex align-items-center justify-center" style="width: 48px; height: 48px;">
+                            <i class="fas fa-building text-white fs-4"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h4 class="mb-0 fw-bold">CARETEL</h4>
+                            <small class="text-muted">Telkom University</small>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Welcome Text -->
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-                    <p class="text-gray-600">Sign in to report and track campus facility issues.</p>
+                <div class="mb-4">
+                    <h2 class="fw-bold mb-2">Welcome back</h2>
+                    <p class="text-muted">Sign in to report and track campus facility issues.</p>
                 </div>
+
+                <!-- Error Messages -->
+                @if($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Error!</strong> {{ $errors->first() }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                @endif
+
+                @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                @endif
+
+                @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                @endif
 
                 <!-- Login Form -->
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
-
-                    <!-- Username or Email -->
-                    <div class="mb-6">
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Username or Email</label>
-                        <input type="text" name="email" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 @error('email') border-red-500 @enderror" 
-                            placeholder="e.g. name@telkomuniversity.ac.id"
-                            value="{{ old('email') }}" required autofocus>
+                    
+                    <!-- Username/Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold">Username or Email</label>
+                        <input type="text" 
+                               class="form-control form-control-lg @error('email') is-invalid @enderror" 
+                               id="email" 
+                               name="email" 
+                               placeholder="e.g. name@telkomuniversity.ac.id"
+                               value="{{ old('email') }}"
+                               required 
+                               autofocus>
                         @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Password -->
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
-                        <div class="relative">
-                            <input type="password" name="password" id="password"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 @error('password') border-red-500 @enderror" 
-                                placeholder="Enter your password" required>
-                            <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                <i class="fas fa-eye" id="toggleIcon"></i>
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-semibold">Password</label>
+                        <div class="input-group">
+                            <input type="password" 
+                                   class="form-control form-control-lg @error('password') is-invalid @enderror" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="Enter your password"
+                                   required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye" id="eyeIcon"></i>
                             </button>
+                            @error('password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        @error('password')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
                     </div>
 
-                    <!-- Remember & Forgot -->
-                    <div class="flex items-center justify-between mb-6">
-                        <label class="flex items-center">
-                            <input type="checkbox" name="remember" class="w-4 h-4 text-caretel-red border-gray-300 rounded focus:ring-red-500">
-                            <span class="ml-2 text-sm text-gray-600">Remember for 30 days</span>
-                        </label>
-                        <a href="{{ route('password.request') }}" class="text-sm caretel-red hover:underline font-semibold">Forgot password?</a>
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                            <label class="form-check-label" for="remember">
+                                Remember for 30 days
+                            </label>
+                        </div>
+                        <a href="{{ route('password.request') }}" class="text-caretel-red text-decoration-none">
+                            Forgot password?
+                        </a>
                     </div>
 
                     <!-- Sign In Button -->
-                    <button type="submit" class="w-full bg-caretel-red hover:bg-caretel-red-dark text-white py-3 rounded-lg font-semibold transition duration-200">
+                    <button type="submit" class="btn btn-caretel-red btn-lg w-100 mb-3">
                         Sign in
                     </button>
 
                     <!-- Register Link -->
-                    <p class="text-center text-gray-600 text-sm mt-6">
-                        Don't have an account? 
-                        <a href="{{ route('register') }}" class="caretel-red font-semibold hover:underline">Register here</a>
-                    </p>
+                    <div class="text-center">
+                        <span class="text-muted">Don't have an account?</span>
+                        <a href="{{ route('register') }}" class="text-caretel-red text-decoration-none fw-semibold ms-1">
+                            Register here
+                        </a>
+                    </div>
                 </form>
 
                 <!-- Footer -->
-                <p class="text-center text-gray-400 text-xs mt-12">
-                    © 2024 Telkom University. All rights reserved.
-                </p>
+                <div class="text-center mt-5">
+                    <small class="text-muted">© 2024 Telkom University. All rights reserved.</small>
+                </div>
             </div>
         </div>
 
         <!-- Right Side - Image & Info -->
-        <div class="hidden lg:block lg:w-1/2 relative">
-            <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800"></div>
-            <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=800" 
-                alt="Campus" 
-                class="w-full h-full object-cover opacity-50">
+        <div class="col-md-7 d-none d-md-flex align-items-end justify-content-center position-relative" 
+             style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+            <!-- Background Image -->
+            <img src="{{ asset('images/campus-building.jpg') }}" 
+                 alt="Campus Building" 
+                 class="position-absolute w-100 h-100 object-fit-cover opacity-50"
+                 onerror="this.style.display='none'">
             
-            <!-- Overlay Content -->
-            <div class="absolute inset-0 flex flex-col justify-end p-12 text-white">
-                <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 inline-flex items-center mb-6 w-fit">
-                    <i class="fas fa-building mr-2"></i>
-                    <span class="font-semibold">Campus Facilities</span>
+            <!-- Content Overlay -->
+            <div class="position-relative text-white p-5 mb-5" style="z-index: 2; max-width: 600px;">
+                <div class="bg-white bg-opacity-10 backdrop-blur rounded-3 p-4 mb-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-building fs-4 me-2"></i>
+                        <span class="badge bg-light text-dark">Campus Facilities</span>
+                    </div>
+                    <h1 class="display-5 fw-bold mb-3">Efficient Reporting, Better Campus.</h1>
+                    <p class="lead mb-0">Join the community in maintaining a world-class learning environment at Telkom University.</p>
                 </div>
-                <h2 class="text-4xl font-bold mb-4">Efficient Reporting, Better Campus.</h2>
-                <p class="text-lg opacity-90">Join the community in maintaining a world-class learning environment at Telkom University.</p>
+
+                <!-- Features -->
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="bg-white bg-opacity-10 backdrop-blur rounded-3 p-3">
+                            <i class="fas fa-clock fs-4 mb-2"></i>
+                            <h6 class="fw-semibold mb-1">Real-time Tracking</h6>
+                            <small>Monitor report progress</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-white bg-opacity-10 backdrop-blur rounded-3 p-3">
+                            <i class="fas fa-shield-alt fs-4 mb-2"></i>
+                            <h6 class="fw-semibold mb-1">Secure & Private</h6>
+                            <small>Your data is protected</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function togglePassword() {
-            const password = document.getElementById('password');
-            const icon = document.getElementById('toggleIcon');
-            
-            if (password.type === 'password') {
-                password.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                password.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
+@push('scripts')
+<script>
+    // Toggle Password Visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const password = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        
+        if (password.type === 'password') {
+            password.type = 'text';
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+        } else {
+            password.type = 'password';
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
         }
-    </script>
-</body>
-</html>
+    });
+</script>
+@endpush
+@endsection

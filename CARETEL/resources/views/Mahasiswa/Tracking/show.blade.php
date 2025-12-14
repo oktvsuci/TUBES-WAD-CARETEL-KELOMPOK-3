@@ -1,206 +1,278 @@
 @extends('layouts.mahasiswa')
 
-@section('title', 'Report Details')
+@section('title', 'Report History')
 
 @section('breadcrumb')
-    <li><i class="fas fa-chevron-right text-xs"></i></li>
-    <li><a href="{{ route('mahasiswa.laporan.index') }}" class="hover:text-caretel-red">Reports</a></li>
-    <li><i class="fas fa-chevron-right text-xs"></i></li>
-    <li class="caretel-red">Detail</li>
+<li class="breadcrumb-item"><a href="{{ route('mahasiswa.tracking.index') }}">Track Reports</a></li>
+<li class="breadcrumb-item active">Report #{{ str_pad($laporan->id, 4, '0', STR_PAD_LEFT) }}</li>
 @endsection
 
 @section('content')
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Main Content -->
-    <div class="lg:col-span-2 space-y-6">
-        <!-- Report Header -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <div class="flex items-start justify-between mb-4">
-                <div>
-                    <span class="text-sm text-gray-500 font-mono">#{{ str_pad($laporan->id, 4, '0', STR_PAD_LEFT) }}</span>
-                    <h1 class="text-2xl font-bold text-gray-900 mt-1">{{ $laporan->judul }}</h1>
-                    <p class="text-gray-600 mt-1">{{ $laporan->lokasi }}</p>
+<!-- Report Header (Sesuai Gambar 3) -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="row align-items-center mb-4">
+            <div class="col-md-8">
+                <h3 class="fw-bold mb-0">Report History</h3>
+                <p class="text-muted mb-0">Track all activities and updates related to your report</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button onclick="window.print()" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-print"></i>
+                </button>
+                <a href="{{ route('mahasiswa.tracking.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Report Summary (Sesuai Gambar 3) -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="d-flex align-items-center">
+                    @if($laporan->foto)
+                    <img src="{{ asset('storage/' . $laporan->foto) }}" 
+                         class="rounded me-3" 
+                         style="width: 80px; height: 80px; object-fit: cover;">
+                    @else
+                    <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-tools text-secondary fs-2"></i>
+                    </div>
+                    @endif
+                    <div>
+                        <h5 class="fw-bold mb-1">{{ $laporan->judul }}</h5>
+                        <p class="text-muted mb-0 small">
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            {{ $laporan->lokasi }}
+                        </p>
+                    </div>
                 </div>
-                <span class="px-4 py-2 text-sm font-semibold rounded-full
-                    @if($laporan->status == 'pending') bg-yellow-100 text-yellow-800
-                    @elseif($laporan->status == 'diproses') bg-orange-100 text-orange-800
-                    @elseif($laporan->status == 'selesai') bg-green-100 text-green-800
-                    @else bg-red-100 text-red-800
-                    @endif">
-                    {{ ucfirst($laporan->status) }}
-                </span>
             </div>
 
-            <!-- Progress Timeline -->
-            <div class="relative mt-8">
-                <div class="absolute top-5 left-0 right-0 h-1 bg-gray-200">
-                    <div class="h-full bg-caretel-red transition-all duration-500" 
-                        style="width: @if($laporan->status == 'pending') 25% 
-                                    @elseif($laporan->status == 'diproses') 66% 
-                                    @else 100% @endif">
-                    </div>
-                </div>
-                
-                <div class="relative flex justify-between">
-                    <!-- Submitted -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-10 h-10 rounded-full bg-caretel-red flex items-center justify-center mb-2 z-10">
-                            <i class="fas fa-check text-white"></i>
+            <!-- Stats Boxes (Sesuai Gambar 3) -->
+            <div class="col-md-9">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="fw-bold mb-0 text-primary">{{ $stats['total_updates'] ?? 0 }}</h4>
+                            <small class="text-muted">Total Updates</small>
                         </div>
-                        <span class="text-xs font-semibold text-gray-900">Reported</span>
-                        <span class="text-xs text-gray-500">Submitted</span>
                     </div>
-
-                    <!-- Reviewing -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-10 h-10 rounded-full 
-                            @if($laporan->status == 'pending') bg-gray-200 text-gray-400
-                            @else bg-caretel-red text-white @endif 
-                            flex items-center justify-center mb-2 z-10">
-                            @if($laporan->status == 'pending')
-                                <i class="fas fa-circle text-xs"></i>
-                            @else
-                                <i class="fas fa-check"></i>
-                            @endif
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="fw-bold mb-0 text-success">{{ $stats['comments'] ?? 0 }}</h4>
+                            <small class="text-muted">Comments</small>
                         </div>
-                        <span class="text-xs font-semibold text-gray-900">Reviewing</span>
-                        <span class="text-xs text-gray-500">Verification</span>
                     </div>
-
-                    <!-- In Progress -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-10 h-10 rounded-full 
-                            @if(in_array($laporan->status, ['pending', 'diproses'])) bg-gray-200 text-gray-400
-                            @else bg-caretel-red text-white @endif 
-                            flex items-center justify-center mb-2 z-10">
-                            @if(in_array($laporan->status, ['pending', 'diproses']))
-                                <i class="fas fa-circle text-xs"></i>
-                            @else
-                                <i class="fas fa-check"></i>
-                            @endif
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="fw-bold mb-0 text-warning">{{ $stats['days_open'] ?? $laporan->created_at->diffInDays(now()) }}</h4>
+                            <small class="text-muted">Days Open</small>
                         </div>
-                        <span class="text-xs font-semibold text-gray-900">In Progress</span>
-                        <span class="text-xs text-gray-500">Being Fixed</span>
                     </div>
-
-                    <!-- Resolved -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-10 h-10 rounded-full 
-                            @if($laporan->status == 'selesai') bg-green-500 text-white
-                            @else bg-gray-200 text-gray-400 @endif 
-                            flex items-center justify-center mb-2 z-10">
-                            @if($laporan->status == 'selesai')
-                                <i class="fas fa-check"></i>
-                            @else
-                                <i class="fas fa-circle text-xs"></i>
-                            @endif
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="fw-bold mb-0 text-info">{{ $stats['response_time'] ?? '-' }}</h4>
+                            <small class="text-muted">Avg Response</small>
                         </div>
-                        <span class="text-xs font-semibold text-gray-900">Resolved</span>
-                        <span class="text-xs text-gray-500">Completed</span>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Report Details -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-lg font-bold text-gray-900 mb-4">Report Details</h2>
-            
-            <div class="space-y-4">
-                <div>
-                    <p class="text-sm font-semibold text-gray-500 mb-1">Description</p>
-                    <p class="text-gray-900">{{ $laporan->deskripsi }}</p>
-                </div>
-
-                <div>
-                    <p class="text-sm font-semibold text-gray-500 mb-2">Evidence Photo</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        @if($laporan->foto)
-                        <img src="{{ Storage::url($laporan->foto) }}" alt="Evidence" class="rounded-lg w-full h-48 object-cover">
-                        @else
-                        <div class="bg-gray-100 rounded-lg w-full h-48 flex items-center justify-center">
-                            <i class="fas fa-image text-gray-400 text-4xl"></i>
-                        </div>
-                        @endif
-                    </div>
-                </div>
+<!-- Status & History Table (Sesuai Gambar 3) -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">
+                <i class="fas fa-history me-2"></i> Activity Timeline
+            </h5>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary active">All</button>
+                <button class="btn btn-outline-secondary">Status Changes</button>
+                <button class="btn btn-outline-secondary">Comments</button>
             </div>
         </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th style="width: 150px;">Date</th>
+                        <th style="width: 120px;">Time</th>
+                        <th style="width: 150px;">Activity Type</th>
+                        <th>Description</th>
+                        <th style="width: 150px;">By</th>
+                        <th style="width: 120px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($history ?? [] as $index => $item)
+                    <tr>
+                        <td class="text-center">
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 30px; height: 30px; margin: auto;">
+                                <i class="fas {{ $item->icon ?? 'fa-circle' }} small"></i>
+                            </div>
+                        </td>
+                        <td>{{ $item->created_at->format('d M Y') }}</td>
+                        <td>{{ $item->created_at->format('H:i A') }}</td>
+                        <td>
+                            <span class="badge bg-{{ $item->type_color ?? 'secondary' }}">
+                                {{ $item->type ?? 'Update' }}
+                            </span>
+                        </td>
+                        <td>{{ $item->description }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle me-2" 
+                                     style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                    <small class="fw-bold">{{ strtoupper(substr($item->user_name, 0, 1)) }}</small>
+                                </div>
+                                <span class="small">{{ $item->user_name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ $item->status ?? $laporan->status }}">
+                                {{ ucfirst($item->status ?? $laporan->status) }}
+                            </span>
+                        </td>
+                    </tr>
+                    @empty
+                    <!-- Default History - Report Created -->
+                    <tr>
+                        <td class="text-center">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 30px; height: 30px; margin: auto;">
+                                <i class="fas fa-plus text-primary small"></i>
+                            </div>
+                        </td>
+                        <td>{{ $laporan->created_at->format('d M Y') }}</td>
+                        <td>{{ $laporan->created_at->format('H:i A') }}</td>
+                        <td><span class="badge bg-primary">Created</span></td>
+                        <td>Report submitted by student</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle me-2" 
+                                     style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                    <small class="fw-bold">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</small>
+                                </div>
+                                <span class="small">{{ Auth::user()->name }}</span>
+                            </div>
+                        </td>
+                        <td><span class="status-badge status-pending">Pending</span></td>
+                    </tr>
 
-        <!-- Activity Log -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-lg font-bold text-gray-900 mb-4">Activity Log</h2>
-            
-            <div class="space-y-4">
-                <div class="flex items-start space-x-3">
-                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <div class="flex-1">
-                        <p class="text-sm font-semibold text-gray-900">Report has been submitted</p>
-                        <p class="text-xs text-gray-500">{{ $laporan->created_at->format('d M Y, H:i') }}</p>
-                        <p class="text-sm text-gray-600 mt-1">Your facility report has been successfully submitted and is waiting for review.</p>
+                    @if($laporan->status != 'pending')
+                    <tr>
+                        <td class="text-center">
+                            <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 30px; height: 30px; margin: auto;">
+                                <i class="fas fa-tools text-warning small"></i>
+                            </div>
+                        </td>
+                        <td>{{ $laporan->updated_at->format('d M Y') }}</td>
+                        <td>{{ $laporan->updated_at->format('H:i A') }}</td>
+                        <td><span class="badge bg-warning text-dark">Assigned</span></td>
+                        <td>Report assigned to technician: {{ $laporan->teknisi_nama ?? 'N/A' }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle me-2" 
+                                     style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                    <small class="fw-bold">A</small>
+                                </div>
+                                <span class="small">Admin</span>
+                            </div>
+                        </td>
+                        <td><span class="status-badge status-diproses">In Progress</span></td>
+                    </tr>
+                    @endif
+
+                    @if($laporan->status == 'selesai')
+                    <tr>
+                        <td class="text-center">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 30px; height: 30px; margin: auto;">
+                                <i class="fas fa-check text-success small"></i>
+                            </div>
+                        </td>
+                        <td>{{ $laporan->updated_at->format('d M Y') }}</td>
+                        <td>{{ $laporan->updated_at->format('H:i A') }}</td>
+                        <td><span class="badge bg-success">Completed</span></td>
+                        <td>Report has been completed and closed</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle me-2" 
+                                     style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                    <small class="fw-bold">{{ strtoupper(substr($laporan->teknisi_nama ?? 'T', 0, 1)) }}</small>
+                                </div>
+                                <span class="small">{{ $laporan->teknisi_nama ?? 'Technician' }}</span>
+                            </div>
+                        </td>
+                        <td><span class="status-badge status-selesai">Completed</span></td>
+                    </tr>
+                    @endif
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Report Details -->
+<div class="row g-4 mt-2">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-file-alt me-2"></i> Report Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Category</small>
+                        <p class="fw-semibold">{{ ucfirst($laporan->kategori) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Priority</small>
+                        <p class="fw-semibold">{{ ucfirst($laporan->prioritas) }}</p>
                     </div>
                 </div>
-
-                @if($laporan->status != 'pending')
-                <div class="flex items-start space-x-3">
-                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <div class="flex-1">
-                        <p class="text-sm font-semibold text-gray-900">Report is being reviewed</p>
-                        <p class="text-xs text-gray-500">{{ $laporan->updated_at->format('d M Y, H:i') }}</p>
-                        <p class="text-sm text-gray-600 mt-1">Our team is reviewing your report and will take necessary action.</p>
-                    </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Description</small>
+                    <p style="white-space: pre-wrap;">{{ $laporan->deskripsi }}</p>
                 </div>
-                @endif
-
-                @if($laporan->status == 'selesai')
-                <div class="flex items-start space-x-3">
-                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <div class="flex-1">
-                        <p class="text-sm font-semibold text-gray-900">Issue has been resolved</p>
-                        <p class="text-xs text-gray-500">{{ $laporan->updated_at->format('d M Y, H:i') }}</p>
-                        <p class="text-sm text-gray-600 mt-1">The facility issue has been successfully fixed. Thank you for your report!</p>
-                    </div>
-                </div>
-                @endif
             </div>
         </div>
     </div>
 
-    <!-- Sidebar -->
-    <div class="space-y-6">
-        <!-- Assigned Technician -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="font-bold text-gray-900 mb-4">Assigned Technician</h3>
-            
-            @if($laporan->teknisi_id)
-            <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                    <span class="text-white font-bold">{{ strtoupper(substr($laporan->teknisi->name ?? 'TK', 0, 2)) }}</span>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-info-circle me-2"></i> Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Report ID</small>
+                    <p class="fw-semibold mb-0">#{{ str_pad($laporan->id, 4, '0', STR_PAD_LEFT) }}</p>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Status</small>
+                    <span class="status-badge status-{{ $laporan->status }}">{{ ucfirst($laporan->status) }}</span>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Created</small>
+                    <p class="mb-0">{{ $laporan->created_at->format('d M Y, H:i') }}</p>
                 </div>
                 <div>
-                    <p class="font-semibold text-gray-900">{{ $laporan->teknisi->name ?? 'Technician' }}</p>
-                    <p class="text-xs text-gray-500">Facility Maintenance</p>
+                    <small class="text-muted d-block">Last Updated</small>
+                    <p class="mb-0">{{ $laporan->updated_at->format('d M Y, H:i') }}</p>
                 </div>
             </div>
-            <button class="w-full mt-4 border border-caretel-red caretel-red py-2 rounded-lg hover:bg-red-50 text-sm font-semibold">
-                <i class="fas fa-comment-dots mr-2"></i> Chat
-            </button>
-            @else
-            <p class="text-sm text-gray-500 text-center py-6">
-                <i class="fas fa-user-clock text-2xl mb-2 block text-gray-400"></i>
-                Waiting for technician assignment
-            </p>
-            @endif
-        </div>
-
-        <!-- Help Center -->
-        <div class="bg-gradient-to-br from-red-500 to-pink-500 rounded-lg shadow-sm p-6 text-white">
-            <i class="fas fa-headset text-3xl mb-3"></i>
-            <h3 class="font-bold text-lg mb-2">Need Help?</h3>
-            <p class="text-sm opacity-90 mb-4">Our support team is ready to assist you with any questions.</p>
-            <button class="w-full bg-white text-caretel-red py-2 rounded-lg hover:bg-gray-100 font-semibold text-sm">
-                Contact Support
-            </button>
         </div>
     </div>
 </div>
