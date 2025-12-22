@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Penugasan;
 use App\Models\Laporan;
 use App\Models\User;
+use App\Models\StatusHistory;
+use App\Models\Notifikasi;
 
 class TugasController extends Controller
 {
@@ -16,7 +18,7 @@ class TugasController extends Controller
     {
         $teknisiId = Auth::id();
         
-        $query = Penugasan::with(['laporan.mahasiswa', 'laporan.kategori'])
+        $query = Penugasan::with(['laporan.user', 'laporan.kategori'])  // ✅ FIXED
             ->where('teknisi_id', $teknisiId);
         
         if ($request->status) {
@@ -66,9 +68,9 @@ class TugasController extends Controller
         $teknisiId = Auth::id();
         
         $tugas = Penugasan::with([
-            'laporan.mahasiswa', 
+            'laporan.user',  // ✅ FIXED
             'laporan.kategori',
-            'laporan.statusHistories'
+            'laporan.statusHistory'  // ✅ FIXED: plural
         ])
         ->where('teknisi_id', $teknisiId)
         ->findOrFail($id);
@@ -95,16 +97,8 @@ class TugasController extends Controller
         DB::beginTransaction();
         try {
             $tugas->update([
-                'estimasi_selesai' => $request->estimasi_selesai,
-                'catatan_estimasi' => $request->catatan_estimasi
-            ]);
-            
-            DB::table('log_aktivitas')->insert([
-                'user_id' => $teknisiId,
-                'aktivitas' => 'Update Estimasi',
-                'deskripsi' => "Update estimasi tugas #{$tugas->id}",
-                'ip_address' => $request->ip(),
-                'created_at' => now()
+                'estimasi_waktu' => $request->estimasi_selesai,  // ✅ Sesuaikan dengan fillable
+                'catatan' => $request->catatan_estimasi
             ]);
             
             DB::commit();
@@ -134,33 +128,31 @@ class TugasController extends Controller
         
         DB::beginTransaction();
         try {
-            $tugas->laporan->update([
+            $laporan = $tugas->laporan;
+            
+            $laporan->update([
                 'status' => 'diproses',
-                'tanggal_mulai' => now()
             ]);
             
             $tugas->update([
-                'tanggal_terima' => now(),
-                'status_penerimaan' => 'diterima'
+                'status' => 'diterima',  // ✅ Update status penugasan
             ]);
             
-            DB::table('status_histories')->insert([
-                'laporan_id' => $tugas->laporan_id,
+            StatusHistory::create([
+                'laporan_id' => $laporan->id,
                 'status_lama' => 'pending',
                 'status_baru' => 'diproses',
                 'keterangan' => 'Tugas diterima teknisi',
                 'user_id' => $teknisiId,
-                'created_at' => now()
             ]);
             
-            DB::table('notifikasi')->insert([
-                'user_id' => $tugas->laporan->mahasiswa_id,
+            Notifikasi::create([
+                'user_id' => $laporan->user_id,  // ✅ FIXED
                 'judul' => 'Laporan Diproses',
-                'pesan' => "Laporan #{$tugas->laporan->kode_laporan} sedang dikerjakan teknisi",
-                'tipe' => 'status_update',
-                'laporan_id' => $tugas->laporan_id,
-                'dibaca' => false,
-                'created_at' => now()
+                'pesan' => "Laporan #{$laporan->id} sedang dikerjakan teknisi",
+                'type' => 'status_update',
+                'laporan_id' => $laporan->id,
+                'is_read' => false,
             ]);
             
             DB::commit();
@@ -172,7 +164,7 @@ class TugasController extends Controller
             DB::rollBack();
             
             return redirect()->back()
-                ->with('error', 'Gagal terima tugas');
+                ->with('error', 'Gagal terima tugas: ' . $e->getMessage());
         }
     }
 
@@ -193,22 +185,20 @@ class TugasController extends Controller
         DB::beginTransaction();
         try {
             $tugas->update([
-                'status_penerimaan' => 'ditolak',
-                'alasan_penolakan' => $request->alasan_penolakan,
-                'tanggal_tolak' => now()
+                'status' => 'ditolak',
+                'catatan' => $request->alasan_penolakan,
             ]);
             
-            $admins = User::where('role', 'admin')->pluck('id');
+            $admins = User::where('role', 'admin')->get();
             
-            foreach ($admins as $adminId) {
-                DB::table('notifikasi')->insert([
-                    'user_id' => $adminId,
+            foreach ($admins as $admin) {
+                Notifikasi::create([
+                    'user_id' => $admin->id,
                     'judul' => 'Penugasan Ditolak',
-                    'pesan' => "Teknisi tolak laporan #{$tugas->laporan->kode_laporan}. Alasan: {$request->alasan_penolakan}",
-                    'tipe' => 'penugasan_ditolak',
+                    'pesan' => "Teknisi tolak laporan #{$tugas->laporan->id}. Alasan: {$request->alasan_penolakan}",
+                    'type' => 'penugasan_ditolak',
                     'laporan_id' => $tugas->laporan_id,
-                    'dibaca' => false,
-                    'created_at' => now()
+                    'is_read' => false,
                 ]);
             }
             

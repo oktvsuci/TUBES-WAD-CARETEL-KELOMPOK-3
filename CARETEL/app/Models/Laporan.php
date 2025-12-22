@@ -9,6 +9,8 @@ class Laporan extends Model
 {
     use HasFactory;
 
+    protected $table = 'laporan';
+
     protected $fillable = [
         'user_id',
         'kategori_id',
@@ -58,5 +60,21 @@ class Laporan extends Model
     public function rating()
     {
         return $this->hasOne(Rating::class);
+    }
+
+    // ✅ PENTING: Accessor untuk views
+    public function getMahasiswaNamaAttribute()
+    {
+        return $this->user ? $this->user->name : 'Unknown';
+    }
+
+    public function getMahasiswaNimAttribute()
+    {
+        return $this->user ? $this->user->nim_nip : '-';
+    }
+
+    public function getTeknisiNamaAttribute()
+    {
+        return $this->teknisi ? $this->teknisi->name : 'Unassigned';
     }
 }

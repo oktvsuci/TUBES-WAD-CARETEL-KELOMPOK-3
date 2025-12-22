@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Penugasan;
 use App\Models\Laporan;
 use App\Models\StatusHistory;
+use App\Models\Notifikasi;
+use App\Models\User;
 
 class StatusController extends Controller
 {
@@ -16,7 +18,7 @@ class StatusController extends Controller
     {
         $teknisiId = Auth::id();
         
-        $query = Penugasan::with(['laporan.mahasiswa', 'laporan.kategori'])
+        $query = Penugasan::with(['laporan.user', 'laporan.kategori'])  // ✅ FIXED: 'mahasiswa' → 'user'
             ->where('teknisi_id', $teknisiId);
         
         if ($request->status) {
@@ -36,7 +38,7 @@ class StatusController extends Controller
     {
         $teknisiId = Auth::id();
         
-        $tugas = Penugasan::with(['laporan.mahasiswa', 'laporan.kategori'])
+        $tugas = Penugasan::with(['laporan.user', 'laporan.kategori'])  // ✅ FIXED
             ->where('teknisi_id', $teknisiId)
             ->findOrFail($id);
         
@@ -91,38 +93,37 @@ class StatusController extends Controller
                 'catatan_teknisi' => $request->catatan_teknisi
             ]);
             
-            DB::table('status_histories')->insert([
+            // ✅ FIXED: Gunakan Eloquent Model, bukan raw query
+            StatusHistory::create([
                 'laporan_id' => $laporan->id,
                 'status_lama' => $statusLama,
                 'status_baru' => $statusBaru,
                 'keterangan' => $request->keterangan ?? "Status diubah oleh teknisi",
                 'user_id' => $teknisiId,
-                'created_at' => now()
             ]);
             
-            $pesanNotif = $this->buatPesanNotifikasi($statusBaru, $laporan->kode_laporan);
+            $pesanNotif = $this->buatPesanNotifikasi($statusBaru, $laporan->id);
             
-            DB::table('notifikasi')->insert([
-                'user_id' => $laporan->mahasiswa_id,
+            // ✅ FIXED: Gunakan user_id bukan mahasiswa_id
+            Notifikasi::create([
+                'user_id' => $laporan->user_id,  // ✅ FIXED
                 'judul' => "Status Laporan: " . ucfirst($statusBaru),
                 'pesan' => $pesanNotif,
-                'tipe' => 'status_update',
+                'type' => 'status_update',
                 'laporan_id' => $laporan->id,
-                'dibaca' => false,
-                'created_at' => now()
+                'is_read' => false,
             ]);
             
             if ($statusBaru === 'selesai') {
-                $admins = DB::table('users')->where('role', 'admin')->pluck('id');
-                foreach ($admins as $adminId) {
-                    DB::table('notifikasi')->insert([
-                        'user_id' => $adminId,
+                $admins = User::where('role', 'admin')->get();
+                foreach ($admins as $admin) {
+                    Notifikasi::create([
+                        'user_id' => $admin->id,
                         'judul' => 'Laporan Selesai',
-                        'pesan' => "Teknisi selesai kerjakan laporan #{$laporan->kode_laporan}",
-                        'tipe' => 'laporan_selesai',
+                        'pesan' => "Teknisi selesai kerjakan laporan #{$laporan->id}",
+                        'type' => 'laporan_selesai',
                         'laporan_id' => $laporan->id,
-                        'dibaca' => false,
-                        'created_at' => now()
+                        'is_read' => false,
                     ]);
                 }
             }
@@ -158,23 +159,22 @@ class StatusController extends Controller
         
         DB::beginTransaction();
         try {
-            DB::table('status_histories')->insert([
+            StatusHistory::create([
                 'laporan_id' => $laporan->id,
                 'status_lama' => $laporan->status,
                 'status_baru' => $laporan->status,
                 'keterangan' => $request->keterangan,
                 'user_id' => $teknisiId,
-                'created_at' => now()
             ]);
             
-            DB::table('notifikasi')->insert([
-                'user_id' => $laporan->mahasiswa_id,
+            // ✅ FIXED: user_id
+            Notifikasi::create([
+                'user_id' => $laporan->user_id,  // ✅ FIXED
                 'judul' => 'Update Progress',
-                'pesan' => "Progress laporan #{$laporan->kode_laporan}: {$request->keterangan}",
-                'tipe' => 'progress_update',
+                'pesan' => "Progress laporan #{$laporan->id}: {$request->keterangan}",
+                'type' => 'progress_update',
                 'laporan_id' => $laporan->id,
-                'dibaca' => false,
-                'created_at' => now()
+                'is_read' => false,
             ]);
             
             DB::commit();
@@ -199,24 +199,22 @@ class StatusController extends Controller
             ->where('teknisi_id', $teknisiId)
             ->findOrFail($id);
         
-        $histories = DB::table('status_histories')
-            ->join('users', 'status_histories.user_id', '=', 'users.id')
+        $histories = StatusHistory::with('user')
             ->where('laporan_id', $tugas->laporan_id)
-            ->select('status_histories.*', 'users.name as user_name')
-            ->orderBy('status_histories.created_at', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
         
         return view('teknisi.status.history', compact('tugas', 'histories'));
     }
 
-    private function buatPesanNotifikasi($status, $kodeLaporan)
+    private function buatPesanNotifikasi($status, $laporanId)
     {
         $pesan = [
-            'pending' => "Laporan #{$kodeLaporan} kembali ke status pending",
-            'diproses' => "Laporan #{$kodeLaporan} sedang dikerjakan teknisi",
-            'selesai' => "Laporan #{$kodeLaporan} sudah selesai diperbaiki. Silakan cek hasil perbaikan"
+            'pending' => "Laporan #{$laporanId} kembali ke status pending",
+            'diproses' => "Laporan #{$laporanId} sedang dikerjakan teknisi",
+            'selesai' => "Laporan #{$laporanId} sudah selesai diperbaiki. Silakan cek hasil perbaikan"
         ];
         
-        return $pesan[$status] ?? "Status laporan #{$kodeLaporan} diupdate";
+        return $pesan[$status] ?? "Status laporan #{$laporanId} diupdate";
     }
 }

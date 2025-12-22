@@ -43,45 +43,20 @@
                     </div>
 
                     <!-- Category -->
-                    <div class="mb-4">
-                        <label for="kategori" class="form-label fw-semibold">
-                            Category <span class="text-danger">*</span>
-                        </label>
-                        <select class="form-select form-select-lg @error('kategori') is-invalid @enderror" 
-                                id="kategori" 
-                                name="kategori" 
+                                <select class="form-select form-select-lg @error('kategori_id') is-invalid @enderror" 
+                                id="kategori_id" 
+                                name="kategori_id" 
                                 required>
                             <option value="">Select Category</option>
-                            <option value="electrical" {{ old('kategori') == 'electrical' ? 'selected' : '' }}>
-                                ⚡ Electrical Issues
+                            @foreach($kategoris as $kategori)
+                            <option value="{{ $kategori->id }}" {{ old('kategori_id') == $kategori->id ? 'selected' : '' }}>
+                                {{ $kategori->nama_kategori }}
                             </option>
-                            <option value="plumbing" {{ old('kategori') == 'plumbing' ? 'selected' : '' }}>
-                                🚰 Plumbing & Water
-                            </option>
-                            <option value="hvac" {{ old('kategori') == 'hvac' ? 'selected' : '' }}>
-                                ❄️ HVAC (AC/Heating)
-                            </option>
-                            <option value="furniture" {{ old('kategori') == 'furniture' ? 'selected' : '' }}>
-                                🪑 Furniture & Fixtures
-                            </option>
-                            <option value="cleaning" {{ old('kategori') == 'cleaning' ? 'selected' : '' }}>
-                                🧹 Cleaning & Sanitation
-                            </option>
-                            <option value="safety" {{ old('kategori') == 'safety' ? 'selected' : '' }}>
-                                🚨 Safety & Security
-                            </option>
-                            <option value="technology" {{ old('kategori') == 'technology' ? 'selected' : '' }}>
-                                💻 Technology & Equipment
-                            </option>
-                            <option value="other" {{ old('kategori') == 'other' ? 'selected' : '' }}>
-                                📋 Other
-                            </option>
+                            @endforeach
                         </select>
-                        @error('kategori')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
+                                    @error('kategori_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                     <!-- Location -->
                     <div class="mb-4">
                         <label for="lokasi" class="form-label fw-semibold">

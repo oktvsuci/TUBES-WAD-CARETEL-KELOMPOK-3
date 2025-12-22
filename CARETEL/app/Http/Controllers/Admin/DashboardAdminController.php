@@ -14,9 +14,9 @@ class DashboardAdminController extends Controller
     {
         // 1. DATA KARTU STATISTIK (Counter)
         $totalLaporan = Laporan::count();
-        $laporanSelesai = Laporan::where('status', 'Selesai')->count();
-        $laporanProses = Laporan::where('status', 'Diproses')->count();
-        $laporanPending = Laporan::where('status', 'Pending')->count();
+        $laporanSelesai = Laporan::where('status', 'selesai')->count();
+        $laporanProses = Laporan::where('status', 'diproses')->count();
+        $laporanPending = Laporan::where('status', 'pending')->count();
 
         // 2. DATA UNTUK GRAFIK (Chart)
         // Mengambil jumlah laporan per kategori
